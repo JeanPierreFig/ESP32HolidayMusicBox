@@ -82,19 +82,19 @@ void initServer(AudioPlayer* player) {
         String action = request->getParam("action", true)->value();
         
         if (action == "play") {
-            playerPtr->pauseCurrentTrack();
+            playerPtr->play();
             request->send(200, "application/json", "{\"status\":\"ok\",\"action\":\"play\"}");
         } 
         else if (action == "pause") {
-            playerPtr->pauseCurrentTrack();
+            playerPtr->pause();
             request->send(200, "application/json", "{\"status\":\"ok\",\"action\":\"pause\"}");
         } 
         else if (action == "next") {
-            playerPtr->nextTrack();
+            playerPtr->playNext();
             request->send(200, "application/json", "{\"status\":\"ok\",\"action\":\"next\"}");
         } 
         else if (action == "previous") {
-            playerPtr->previousTrack();
+            playerPtr->playPrevious();
             request->send(200, "application/json", "{\"status\":\"ok\",\"action\":\"previous\"}");
         } 
         else {
