@@ -23,15 +23,19 @@
 //   delay(1000); // Wait 1 second
 // }
 
-#include "Audio/SDPlaylist.h"
+// ============================================================================
+// main.cpp (UPDATED)
+// ============================================================================
 #include "Audio/AudioPlayer.h"
 #include "Server/Server.h"
 
-// Global Objects
-SDPlaylist playlist;
-AudioPlayer audioPlayer; // <-- 2. Create an instance of the AudioPlayer
+// REMOVED: #include "Audio/SDPlaylist.h"
 
-int currentTrack = 1; // Track the currently playing song index
+// Global Objects
+// REMOVED: SDPlaylist playlist;
+AudioPlayer audioPlayer; 
+
+// REMOVED: int currentTrack = 1;
 
 void setup() {
     Serial.begin(115200);
@@ -39,52 +43,24 @@ void setup() {
     
     Serial.println("--- ESP32 Jukebox System Starting ---");
     
-    // 1. Initialize and scan SD card for music
-    if (!playlist.begin()) {
-        Serial.println("FATAL: Failed to initialize SD card or find music!");
+    // 1. The AudioPlayer::begin() now handles all DAC and SD/Playlist initialization.
+    if (!audioPlayer.begin()) {
+        Serial.println("FATAL: System initialization failed.");
+        // The individual error messages (SD fail, DAC fail) are now printed inside AudioPlayer::begin()
         return;
     }
     
-    // Print all tracks found
-    playlist.printPlaylist();
-    Serial.printf("\nTotal tracks found: %d\n", playlist.getTrackCount());
-
-    // 2. Initialize the Audio Player (I2S DAC)
-    if (!audioPlayer.begin()) {
-        Serial.println("FATAL: Audio Player initialization failed.");
-        return;
-    }
-
+    // 2. The AudioPlayer is ready to go.
     initServer(&audioPlayer);
 
     // 3. Start Playing the First Track
-    if (playlist.getTrackCount() > 0) {
-        // Get the path for the first track (index 0)
-        const char* firstTrackPath = playlist.getTrack(currentTrack); 
-        
-        // Tell the AudioPlayer to start playing it
-        audioPlayer.playTrack(firstTrackPath);
-    } else {
-        Serial.println("No tracks found to play. System will idle.");
-    }
+    // Note: We no longer need to check getTrackCount() here, 
+    // as AudioPlayer::begin() handles the fatal check, and play() handles the start.
+    audioPlayer.play();
 }
 
 void loop() {
-    // CRITICAL: This MUST be called continuously to process audio data 
-    // from the MP3 decoder and send it to the I2S DAC.
+    // CRITICAL: This MUST be called continuously. 
+    // It handles audio processing AND auto-advancing to the next track.
     audioPlayer.loop();
-
-    // Check if the current song has finished playing (using the feature we added)
-    if (audioPlayer.hasFinished()) {
-        Serial.println("Current track finished. Advancing to next track.");
-
-        // 1. Increment track index, wrapping around to 0 if necessary
-        currentTrack++;
-        if (currentTrack >= playlist.getTrackCount()) {
-            currentTrack = 0; // Loop back to the start of the playlist
-        }
-
-        // 2. Start the next track
-        audioPlayer.playTrack(playlist.getTrack(currentTrack));
-    }
 }

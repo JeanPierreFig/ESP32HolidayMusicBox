@@ -59,21 +59,14 @@ bool SDPlaylist::isAudioFile(const char* filename) {
     String name = String(filename);
     name.toLowerCase();
 
-    // --- NEW LOGIC ADDED HERE ---
-    // 1. Ignore hidden files (starts with .) 
-    //    e.g., .DS_Store (macOS)
     if (name.startsWith(".")) {
         return false;
     }
     
-    // 2. Ignore macOS resource/metadata files (starts with ._)
-    //    e.g., ._Merry_Christmas_to_you.mp3
     if (name.startsWith("._")) {
         return false;
     }
-    // ----------------------------
-
-    // 3. Check for valid audio extensions
+    
     return name.endsWith(".mp3") || name.endsWith(".wav");
 }
 
