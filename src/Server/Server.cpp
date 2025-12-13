@@ -2,7 +2,7 @@
 #include <ESPAsyncWebServer.h>
 #include <ESPmDNS.h>
 #include <ArduinoJson.h>
-#include "AudioPlayer.h"
+#include "Audio/AudioPlayer.h"
 #include "Server.h"
 #include "Index.h"
 #include "Script.h"
@@ -65,6 +65,40 @@ void initServer(AudioPlayer* player) {
             request->send(200, "application/json", "{\"status\":\"ok\",\"volume\":" + String(vol) + "}");
         } else {
             request->send(400, "application/json", "{\"error\":\"Missing volume parameter\"}");
+        }
+    });
+
+    server.on("/api/control", HTTP_POST, [](AsyncWebServerRequest *request){
+        if (!request->hasParam("action", true)) {
+            request->send(400, "application/json", "{\"error\":\"Missing action parameter\"}");
+            return;
+        }
+        
+        if (playerPtr == nullptr) {
+            request->send(500, "application/json", "{\"error\":\"Player not initialized\"}");
+            return;
+        }
+        
+        String action = request->getParam("action", true)->value();
+        
+        if (action == "play") {
+            playerPtr->pauseCurrentTrack();
+            request->send(200, "application/json", "{\"status\":\"ok\",\"action\":\"play\"}");
+        } 
+        else if (action == "pause") {
+            playerPtr->pauseCurrentTrack();
+            request->send(200, "application/json", "{\"status\":\"ok\",\"action\":\"pause\"}");
+        } 
+        else if (action == "next") {
+            playerPtr->nextTrack();
+            request->send(200, "application/json", "{\"status\":\"ok\",\"action\":\"next\"}");
+        } 
+        else if (action == "previous") {
+            playerPtr->previousTrack();
+            request->send(200, "application/json", "{\"status\":\"ok\",\"action\":\"previous\"}");
+        } 
+        else {
+            request->send(400, "application/json", "{\"error\":\"Invalid action\"}");
         }
     });
     

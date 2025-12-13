@@ -1,3 +1,6 @@
+#ifndef SCRIPT_H
+#define SCRIPT_H
+
 const char script_js[] PROGMEM = R"rawliteral(
 function updateVolume(value) {
     document.getElementById('volume-display').textContent = value + '%';

@@ -23,9 +23,9 @@
 //   delay(1000); // Wait 1 second
 // }
 
-#include "SDPlaylist.h"
-#include "AudioPlayer.h"
-#include "Server.h"
+#include "Audio/SDPlaylist.h"
+#include "Audio/AudioPlayer.h"
+#include "Server/Server.h"
 
 // Global Objects
 SDPlaylist playlist;
