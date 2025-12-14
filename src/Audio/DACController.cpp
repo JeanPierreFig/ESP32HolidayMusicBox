@@ -140,6 +140,3 @@ bool DACController::configureDAC() {
     
     return true;
 }
-
-
-

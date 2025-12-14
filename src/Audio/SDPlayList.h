@@ -3,33 +3,27 @@
 #define SD_PLAYLIST_H
 
 #include <WString.h>
+#include <vector> 
+#include <string>
 
 class SDPlaylist {
 public:
     SDPlaylist();
     
-    // Initialize SD card and scan for music files
     bool begin();
-    
-    // Get specific track path by index
     const char* getTrack(int index);
-    
-    // Get number of tracks
     int getTrackCount();
-    
-    // Print all tracks to serial
     void printPlaylist();
+    std::vector<std::string> getPlaylist();
 
 private:
     static const int MAX_TRACKS = 100;
     char* _playlist[MAX_TRACKS];
     int _trackCount;
     
-    // Scan directory for audio files
     void scanForMusic(const char* dirname);
     
-    // Check if file is audio
     bool isAudioFile(const char* filename);
 };
 
-#endif // SD_PLAYLIST_H
+#endif

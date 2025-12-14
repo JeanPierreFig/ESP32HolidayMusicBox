@@ -87,3 +87,16 @@ void SDPlaylist::printPlaylist() {
         Serial.printf("%d: %s\n", i, _playlist[i]);
     }
 }
+
+std::vector<std::string> SDPlaylist::getPlaylist() {
+    std::vector<std::string> titles;
+    
+    for (int i = 0; i < _trackCount; i++) {
+        
+        if (_playlist[i] != nullptr) {
+            titles.push_back(_playlist[i]);
+        }
+    }
+    
+    return titles;
+}

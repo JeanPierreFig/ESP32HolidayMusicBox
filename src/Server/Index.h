@@ -84,38 +84,29 @@ const char index_html[] PROGMEM = R"rawliteral(
     }
   </style>
 </head>
-<body>
+<body onload="fetchPlaylist()">
   <h1><img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExMm41ODg0aHp0cmZnMjVhNnJreHd2ZGUyNnkwbnpidGR1dTd3N3F2NyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/IBAFn2cP42zkCYLL5F/giphy.gif" alt="Music Note" style="width: 40px; height: 40px; vertical-align: middle; image-rendering: pixelated;" /> MUSIC BOX <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExMm41ODg0aHp0cmZnMjVhNnJreHd2ZGUyNnkwbnpidGR1dTd3N3F2NyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/IBAFn2cP42zkCYLL5F/giphy.gif" alt="Music Note" style="width: 40px; height: 40px; vertical-align: middle; image-rendering: pixelated;" /></h1>
   <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExOWE5N2tnYTdpejNhZTBuaTY1OWVsZWpkcDYzbDQ0NnY4aTA1a2x0cyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/cE4hYhquh5YnkAWysd/giphy.gif" alt="Dancing Santa" style="margin-bottom:10px; image-rendering: pixelated;" />
   <div class="container">
     <marquee class="marquee" behavior="alternate">
       ❄️ Welcome to my totally awesome 90s Christmas Music Player! ❄️
     </marquee>
-    <audio id="player" controls style="width:100%">
-      <source src="song1.mp3" type="audio/mpeg">
-      Your browser does not support the audio tag.
-    </audio>
     <div style="display:flex; flex-wrap:wrap; justify-content:center;">
-      <button onclick="previous()">⏮ PREVIOUS</button>
-      <button onclick="play()">▶ PLAY</button>
-      <button onclick="pause()">⏸ PAUSE</button>
-      <button onclick="next()">⏭ NEXT</button>
+     <button onclick="previous()">⏮ PREVIOUS</button>
+    <button id="playPauseBtn" onclick="togglePlayPause()">▶ t</button>
+    <button onclick="next()">⏭ NEXT</button>
     </div>
     <div style="margin-top:10px; color:cyan;">
       🔊 Volume: <span id="volume-display">100</span>%<br>
-      <input type="range" min="0" max="100" value="20" oninput="updateVolume(this.value)" style="width:60%;">
+      <input id="volume-slider" type="range" min="0" max="100" oninput="updateVolume(this.value)" style="width:60%;">
     </div>
-    <div class="playlist">
+   <div class="playlist">
       <strong>🎶 PLAYLIST 🎶</strong>
-      <div onclick="loadSong('song1.mp3')">Jingle Bells</div>
-      <div onclick="loadSong('song2.mp3')">Silent Night</div>
-      <div onclick="loadSong('song3.mp3')">Deck the Halls</div>
     </div>
   </div>
   <div class="footer">
     <p>Best viewed in Netscape Navigator 4.0 😎</p>
-    <p>© 1997 SantaNet Productions</p>
-    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6a/Under_construction_icon-yellow.gif" alt="Under Construction" />
+    <p>© 1995 SantaNet Productions</p>
   </div>
 
    <script>

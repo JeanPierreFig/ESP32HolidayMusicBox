@@ -9,56 +9,51 @@
 #include <SD.h>
 #include "DACController.h"
 #include "SDPlaylist.h"
+#include <vector> 
+#include <string>
+#include <algorithm>
 
 class AudioPlayer {
 public:
     AudioPlayer();
+    SDPlaylist _playlist; 
 
-    // The begin function now initializes both DAC and the internal playlist
     bool begin();
-    
-    // PUBLIC CONTROL METHODS (Cleaned up as requested)
-    void play();        // Starts/Resumes playback of the current track
-    void pause();       // Pauses the current track
-    void playNext();    // Moves to the next track and starts playback
-    void playPrevious();// Moves to the previous track and starts playback
-    
-    // Existing functions
+    void play();
+    void pause();
+    void playNext();
+    void playPrevious();
     void loop();
     bool isRunning();
     bool hasFinished();
-    
+    void playTrack(int index);
     void setVolume(uint8_t volume);
     void hasFinished(bool finished);
 
-    // Accessors
     int getCurrentTrackIndex() const { return _currentTrackIndex; }
+    std::vector<std::string> getPlaylist();
+    String getCurrentStateJSON();
 
-    const SDPlaylist& getPlaylist() const { return _playlist; }
-    
 private:
     Audio audio;
     DACController dacController; 
-    
-    // --- TRACK MANAGEMENT MEMBERS ---
-    SDPlaylist _playlist;           // <--- NEW: Internal SDPlaylist object
-    int _currentTrackIndex = 0;      // Index of the currently playing track
+
+    int _currentTrackIndex = 0;
     bool _finished = false;
     uint32_t _pausePosition = 0;
+    int _currentVolume = 10;
     
-    // Internal playback logic
-    void _startPlayback();          // Starts the track at the current index
-    void _advanceTrack(int direction); // Internal helper for next/previous
+    void _startPlayback();
+    void _advanceTrack(int direction);
         
-    // Internal function to start the track at a given path (formerly playTrack)
     void _startTrack(const char* path);
 };
 
-// Global callback functions for Audio library (remain the same)
+// Global callback functions for Audio library
 void audio_info(const char *info);
 void audio_id3data(const char *info);
 void audio_eof_mp3(const char *info);
 void audio_showstation(const char *info);
 void audio_showstreamtitle(const char *info);
 
-#endif // AUDIOPLAYER_H
+#endif 

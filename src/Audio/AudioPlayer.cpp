@@ -3,8 +3,8 @@
 // ============================================================================
 #include "AudioPlayer.h"
 #include <Arduino.h>
+#include <ArduinoJson.h>
 
-// --- Global Audio Callbacks ---
 static AudioPlayer* audioPlayerInstance = nullptr;
 
 void audio_info(const char *info) {
@@ -30,8 +30,6 @@ void audio_showstreamtitle(const char *info) {
   Serial.print("Stream Title: "); Serial.println(info);
 }
 
-// --- AudioPlayer Class Implementation ---
-
 AudioPlayer::AudioPlayer() {
     audioPlayerInstance = this;
 }
@@ -39,13 +37,11 @@ AudioPlayer::AudioPlayer() {
 bool AudioPlayer::begin() {
     Serial.println("\n=== Initializing Audio System ===");
     
-    // 1. Initialize the DAC controller
     if (!dacController.begin()) {
         Serial.println("ERROR: Failed to initialize DAC controller!");
         return false;
     }
     
-    // 2. Initialize the internal SDPlaylist
     Serial.println("\n--- Initializing SD Card and Playlist ---");
     if (!_playlist.begin()) { 
         Serial.println("FATAL: Failed to initialize SD card or find music!");
@@ -55,36 +51,54 @@ bool AudioPlayer::begin() {
     _playlist.printPlaylist();
     Serial.printf("Total tracks found: %d\n", _playlist.getTrackCount());
     
-    // 3. Set up the I2S pin configuration for Audio library
     audio.setPinout(BCLK_PIN, LRCK_PIN, DOUT_PIN);
-    audio.setVolume(10);
+    audio.setVolume(_currentVolume);
     
     Serial.println("=== Audio System Ready ===\n");
 
     return true;
 }
 
-// Internal function to start the track based on its path
+void AudioPlayer::playTrack(int index) {
+    if (_playlist.getTrackCount() == 0) {
+        Serial.println("ERROR: Cannot set track, playlist is empty.");
+        return;
+    }
+
+    if (audio.isRunning()) {
+        audio.stopSong();
+    }
+    
+    _pausePosition = 0; 
+
+    int trackCount = _playlist.getTrackCount();
+
+    _currentTrackIndex = (index % trackCount + trackCount) % trackCount;
+
+    Serial.printf("Switching track to index %d.\n", _currentTrackIndex);
+    
+   
+    _startPlayback();
+}
+
 void AudioPlayer::_startTrack(const char* path) {
     if (audio.isRunning()) {
         audio.stopSong();
     }
     
     _finished = false;
-    _pausePosition = 0; // Reset position whenever a new track starts
+    _pausePosition = 0;
 
     Serial.printf("▶ Playing: %s\n", path);
     audio.connecttoFS(SD, path);
 }
 
-// Internal function to start the track at the current index (from beginning)
 void AudioPlayer::_startPlayback() {
     if (_playlist.getTrackCount() == 0) {
         Serial.println("ERROR: Cannot play track, playlist is empty.");
         return;
     }
     
-    // Ensure index is valid
     int trackCount = _playlist.getTrackCount();
     _currentTrackIndex = (_currentTrackIndex % trackCount + trackCount) % trackCount;
     
@@ -96,9 +110,7 @@ void AudioPlayer::play() {
     if (_playlist.getTrackCount() == 0) return;
     
     if (_pausePosition > 0) {
-        // RESUME LOGIC (Seek)
         
-        // Ensure we stop any previous playback attempt
         if (audio.isRunning()) {
             audio.stopSong(); 
         }
@@ -113,11 +125,9 @@ void AudioPlayer::play() {
         _pausePosition = 0; // Reset stored position after resuming
         
     } else if (!audio.isRunning()) {
-        // Start playback from the beginning of the current track
         Serial.println("Audio starting playback from the beginning.");
         _startPlayback(); 
     } else {
-        // Audio is running but paused (use internal library resume)
         audio.pauseResume();
         Serial.println("Audio Resumed.");
     }
@@ -127,10 +137,8 @@ void AudioPlayer::play() {
 void AudioPlayer::pause() {
     if (audio.isRunning()) {
         
-        // FIX: Use getFilePos() to get the current byte offset
         _pausePosition = audio.getFilePos(); 
         
-        // 2. Stop the song to cleanly pause the playback
         audio.stopSong();       
         
         // StopSong will call audio_eof_mp3, We need to make sure to flip it back.
@@ -140,25 +148,21 @@ void AudioPlayer::pause() {
     }
 }
 
-// Internal helper for changing tracks
 void AudioPlayer::_advanceTrack(int direction) {
     if (_playlist.getTrackCount() == 0) return;
 
     _currentTrackIndex += direction;
     
-    // Wrap the index correctly
     int trackCount = _playlist.getTrackCount();
     _currentTrackIndex = (_currentTrackIndex % trackCount + trackCount) % trackCount;
     
     _startPlayback();
 }
 
-// PUBLIC - Play the next track
 void AudioPlayer::playNext() {
     _advanceTrack(1);
 }
 
-// PUBLIC - Play the previous track
 void AudioPlayer::playPrevious() {
     _advanceTrack(-1);
 }
@@ -169,7 +173,7 @@ void AudioPlayer::loop() {
     // Auto-advance logic
     if (hasFinished()) {
         Serial.println("Current track finished. Auto-advancing to next track.");
-        hasFinished(false); // Reset flag immediately
+        hasFinished(false);
         playNext();
     }
 }
@@ -193,5 +197,42 @@ void AudioPlayer::setVolume(uint8_t volume) {
     uint8_t mappedVolume = map(volume, 0, 100, 0, 21);
     
     audio.setVolume(mappedVolume);
+    _currentVolume = volume;
     Serial.printf("Volume set to: %d%% (%d/21)\n", volume, mappedVolume);
+}
+
+std::vector<std::string> AudioPlayer::getPlaylist() {
+    std::vector<std::string> rawPaths = _playlist.getPlaylist();
+    
+    std::vector<std::string> formattedTitles;
+
+    for (std::string path : rawPaths) {
+        
+        size_t lastSeparator = path.find_last_of('/');
+        if (lastSeparator != std::string::npos) {
+            path = path.substr(lastSeparator + 1);
+        }
+        
+        size_t lastDot = path.find_last_of('.');
+        
+        if (lastDot != std::string::npos && lastDot > 0) {
+            path = path.substr(0, lastDot);
+        }
+
+        formattedTitles.push_back(path);
+    }
+    
+    return formattedTitles;
+}
+
+String AudioPlayer::getCurrentStateJSON() {
+    StaticJsonDocument<512> doc;
+
+    doc["trackIndex"] = _currentTrackIndex;
+    doc["isPlaying"] = isRunning();
+    doc["volume"] = _currentVolume;
+
+    String json;
+    serializeJson(doc, json);
+    return json;
 }
